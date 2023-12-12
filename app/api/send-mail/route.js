@@ -1,36 +1,36 @@
-import { getServerSession } from "next-auth";
-import { authOptions } from "../auth/[...nextauth]/route";
-import { NextResponse } from "next/server";
+import { NextResponse } from "next/server"
+import { getServerSession } from "next-auth"
+
+import { authOptions } from "../auth/[...nextauth]/route"
 
 // a post request that take bcc, cc, email a image url and sends mail throught node mailer
 const nodemailer = require("nodemailer")
 
 const handler = async (req, res) => {
+  const { bcc, cc, email, image, name, years } = await req.json()
 
-    const { bcc, cc, email, image, name, years } = await req.json();
+  console.log({ bcc, cc, email, image, name })
 
-    console.log({ bcc, cc, email, image, name })
+  const data = await getServerSession(authOptions)
 
-    const data = await getServerSession(authOptions)
+  const transporter = nodemailer.createTransport({
+    service: "gmail",
+    auth: {
+      type: "OAuth2",
+      user: data?.user?.email,
+      clientId: process.env.GOOGLE_CLIENT_ID,
+      clientSecret: process.env.GOOGLE_CLIENT_SECRET,
+      accessToken: data?.accessToken,
+    },
+  })
 
-    const transporter = nodemailer.createTransport({
-        service: 'gmail',
-        auth: {
-            type: 'OAuth2',
-            user: data?.user?.email,
-            clientId: process.env.GOOGLE_CLIENT_ID,
-            clientSecret: process.env.GOOGLE_CLIENT_SECRET,
-            accessToken: data?.accessToken,
-        }
-    })
-
-    const mailOptions = {
-        from: data?.user?.email,
-        to: email,
-        bcc: bcc,
-        cc: cc,
-        subject: `Happy work anniversary ${name}`,
-        html: `
+  const mailOptions = {
+    from: data?.user?.email,
+    to: email,
+    bcc: bcc,
+    cc: cc,
+    subject: `Happy work anniversary ${name}`,
+    html: `
         <!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
         <html xmlns="http://www.w3.org/1999/xhtml" xmlns:o="urn:schemas-microsoft-com:office:office" style="width:100%;-webkit-text-size-adjust:100%;-ms-text-size-adjust:100%;padding:0;Margin:0">
           <head>
@@ -498,20 +498,27 @@ const handler = async (req, res) => {
             </div>
           </body>
         </html>
-        `
-    }
+        `,
+  }
 
-    console.log(mailOptions)
+  console.log(mailOptions)
 
+  await new Promise((resolve) => {
     transporter.sendMail(mailOptions, (error, info) => {
-        if (error) {
-            console.log(error);
-        } else {
-            console.log('Email sent: ' + info.response);
-        }
+      if (error) {
+        console.log(error)
+        resolve(error)
+      } else {
+        console.log("Email sent: " + info.response)
+        resolve(info.response)
+      }
     })
+  })
 
-    return res.json({ success: true })
+  return res.status(200).json({
+    success: true
+  })
+
 }
 
 export { handler as POST }
