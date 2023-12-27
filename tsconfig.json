@@ -24,6 +24,6 @@
     ],
     "strictNullChecks": true
   },
-  "include": ["next-env.d.ts", "**/*.ts", "**/*.tsx", ".next/types/**/*.ts", "app/page.jsx", "app/api/auth/[...nextauth]/route.js", "app/api/send-mail/route.js"],
+  "include": ["next-env.d.ts", "**/*.ts", "**/*.tsx", ".next/types/**/*.ts", "app/page.jsx", "app/api/auth/[...nextauth]/route.ts", "app/api/send-mail/route.ts"],
   "exclude": ["node_modules"]
 }

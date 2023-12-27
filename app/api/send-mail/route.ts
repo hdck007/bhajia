@@ -3,13 +3,10 @@ import { getServerSession } from "next-auth"
 
 import { authOptions } from "../auth/[...nextauth]/route"
 
-// a post request that take bcc, cc, email a image url and sends mail throught node mailer
 const nodemailer = require("nodemailer")
 
-const handler = async (req, res) => {
-  const { bcc, cc, email, image, name, years } = await req.json()
-
-  console.log({ bcc, cc, email, image, name })
+const handler = async (req: Request) => {
+  const { bcc, cc, email, image, name, years, isBirthday } = await req.json()
 
   const data = await getServerSession(authOptions)
 
@@ -20,6 +17,7 @@ const handler = async (req, res) => {
       user: data?.user?.email,
       clientId: process.env.GOOGLE_CLIENT_ID,
       clientSecret: process.env.GOOGLE_CLIENT_SECRET,
+      // @ts-ignore
       accessToken: data?.accessToken,
     },
   })
@@ -29,7 +27,7 @@ const handler = async (req, res) => {
     to: email,
     bcc: bcc,
     cc: cc,
-    subject: `Happy work anniversary ${name}`,
+    subject: isBirthday ? `Happy birthday ${name}` : `Happy work anniversary ${name}`,
     html: `
         <!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
         <html xmlns="http://www.w3.org/1999/xhtml" xmlns:o="urn:schemas-microsoft-com:office:office" style="width:100%;-webkit-text-size-adjust:100%;-ms-text-size-adjust:100%;padding:0;Margin:0">
@@ -501,24 +499,32 @@ const handler = async (req, res) => {
         `,
   }
 
-  console.log(mailOptions)
-
-  await new Promise((resolve) => {
-    transporter.sendMail(mailOptions, (error, info) => {
+  return await new Promise((resolve, reject) => {
+    transporter.sendMail(mailOptions, (error: any, info: any) => {
       if (error) {
         console.log(error)
-        resolve(error)
+        reject(new Error(error))
       } else {
         console.log("Email sent: " + info.response)
         resolve(info.response)
       }
     })
+  }).then(() => {
+    return Response.json(
+      { success: true },
+      {
+        status: 200,
+      }
+    )
+  }).catch((error) => {
+    return Response.json(
+      { error: error },
+      {
+        status: 500,
+      }
+    )
   })
-
-  return res.status(200).json({
-    success: true
-  })
-
+  
 }
 
 export { handler as POST }
