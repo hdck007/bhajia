@@ -510,19 +510,9 @@ const handler = async (req: Request) => {
       }
     })
   }).then(() => {
-    return Response.json(
-      { success: true },
-      {
-        status: 200,
-      }
-    )
+    return new Response("Email sent", { status: 200 })
   }).catch((error) => {
-    return Response.json(
-      { error: error },
-      {
-        status: 500,
-      }
-    )
+    return new Response("Failed to send email", { status: 500 })
   })
   
 }
