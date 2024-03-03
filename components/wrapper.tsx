@@ -1,7 +1,7 @@
 "use client"
 
 import { useState } from "react"
-import { signIn } from "next-auth/react"
+import { Loader2Icon } from "lucide-react"
 import { ReactMultiEmail } from "react-multi-email"
 
 import { Button } from "./ui/button"
@@ -17,6 +17,7 @@ import {
 import { ToastProvider } from "./ui/toast"
 import { Toaster } from "./ui/toaster"
 import { useToast } from "./ui/use-toast"
+import { signOut } from "next-auth/react"
 
 export default function Wrapper() {
   const [image, setImage] = useState("")
@@ -27,14 +28,17 @@ export default function Wrapper() {
   const [years, setYears] = useState("")
   const [wishType, setWishType] = useState("birthday")
   const { toast } = useToast()
+  const [isLoading, setIsLoading] = useState(false)
 
   const handleSubmit = async () => {
-    if (!image || !email || !name || !years) {
+    setIsLoading(true)
+    if (!image || !email || !name || (wishType === "anniversary" && !years)) {
       toast({
         title: "Error!",
         description: "Please fill all the fields.",
         variant: "destructive",
       })
+      setIsLoading(false)
       return
     }
     toast({
@@ -51,21 +55,24 @@ export default function Wrapper() {
         bcc: bccs.join(","),
         cc: ccs.join(","),
         email: email,
-        image: image,
+        image: image.split("d/")[1].split("/view")[0],
         name: name,
         years: years,
         isBirthday: wishType === "birthday",
       }),
     }).then((res) => {
       if (res.ok) {
+        setIsLoading(false)
         toast({
           title: "Success!",
           description: "Email sent successfully.",
         })
-      }else{
+      } else {
+        setIsLoading(false)
         toast({
           title: "Error!",
-          description: "Something went wrong. Please check your mail box and try after 5 mins",
+          description:
+            "Something went wrong. Please check your mail box and try after 5 mins",
           variant: "destructive",
         })
       }
@@ -93,12 +100,25 @@ export default function Wrapper() {
           onChange={(e) => setName(e.target.value)}
           placeholder="Example: Amitabh Bachchan"
         />
-        <Input
-          type="text"
-          value={years}
-          onChange={(e) => setYears(e.target.value)}
-          placeholder="Example: 5 years"
-        />
+        <Select value={wishType} onValueChange={setWishType}>
+          <SelectTrigger className="w-[180px]">
+            <SelectValue placeholder="Select a fruit" />
+          </SelectTrigger>
+          <SelectContent>
+            <SelectGroup>
+              <SelectItem value="birthday">Birthday</SelectItem>
+              <SelectItem value="work">Work Anniversary</SelectItem>
+            </SelectGroup>
+          </SelectContent>
+        </Select>
+        {wishType === "work" && (
+          <Input
+            type="text"
+            value={years}
+            onChange={(e) => setYears(e.target.value)}
+            placeholder="Example: 5 years"
+          />
+        )}
         <ReactMultiEmail
           placeholder="BCC   "
           emails={bccs}
@@ -133,18 +153,19 @@ export default function Wrapper() {
             )
           }}
         />
-        <Select value={wishType} onValueChange={setWishType}>
-          <SelectTrigger className="w-[180px]">
-            <SelectValue placeholder="Select a fruit" />
-          </SelectTrigger>
-          <SelectContent>
-            <SelectGroup>
-              <SelectItem value="birthday">Birthday</SelectItem>
-              <SelectItem value="work">Work Aniversary</SelectItem>
-            </SelectGroup>
-          </SelectContent>
-        </Select>
-        <Button onClick={handleSubmit}>Submit</Button>
+        <Button
+          className="flex items-center gap-4"
+          disabled={isLoading}
+          onClick={handleSubmit}
+        >
+          Submit
+          {isLoading && <Loader2Icon />}
+        </Button>
+        <Button
+          onClick={() => {
+            signOut()
+          }}
+        >Sign Out</Button>
         <Toaster />
       </div>
     </ToastProvider>

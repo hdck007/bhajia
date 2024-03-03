@@ -5,7 +5,7 @@ import { Button } from "./ui/button"
 
 const SignInWrapper = () => {
     return (
-        <Button onClick={() => signIn("/google")}>Signin</Button>
+        <Button onClick={() => signIn("/google")}>Sign In</Button>
     )
 }
 
